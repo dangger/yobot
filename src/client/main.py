@@ -55,7 +55,7 @@ def main():
     if os.path.exists('yobot_config.json'):
         basedir = "."
     else:
-        basedir = "./yobot_data"
+        basedir = "C:/Users/dangg/Desktop/yobot_data"
     if os.path.exists(os.path.join(basedir, "yobot_config.json")):
         try:
             with open(os.path.join(basedir, "yobot_config.json"), "r", encoding="utf-8-sig") as f:
