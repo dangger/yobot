@@ -728,7 +728,8 @@ class ClanBattle:
         if send_private_msg:
             asyncio.ensure_future(self.send_private_remind(
                 member_list=member_list,
-                content=f'{sender_name}提醒您及时完成今日出刀',
+                # content=f'{sender_name}提醒您及时完成今日出刀',
+                content=f'狂暴牛提醒您及时完成今日出刀',
             ))
         else:
             message = ' '.join((
@@ -736,7 +737,8 @@ class ClanBattle:
             ))
             asyncio.ensure_future(self.api.send_group_msg(
                 group_id=group_id,
-                message=message+f'\n=======\n{sender_name}提醒您及时完成今日出刀',
+                # message=message+f'\n=======\n{sender_name}提醒您及时完成今日出刀',
+                message=message + f'\n=======\n狂暴牛提醒您及时完成今日出刀',
             ))
 
     def add_subscribe(self, group_id: Groupid, qqid: QQid, boss_num, message=None):

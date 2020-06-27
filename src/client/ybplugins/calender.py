@@ -159,25 +159,32 @@ class Event:
         return timeline
 
     def load_time_cn(self, timestr) -> Arrow:
-        d_time = datetime.datetime.strptime(timestr, r"%Y/%m/%d %H:%M:%S")
+        d_time = datetime.datetime.strptime(timestr, r"%Y/%m/%d %H:%M")
         a_time = Arrow.fromdatetime(d_time)
         if a_time.time() < datetime.time(hour=5):
             a_time -= datetime.timedelta(hours=5)
         return a_time
 
     async def load_timeline_cn_async(self):
-        event_source = "http://toolscdn.yobot.win/calender/cn.json"
+        #event_source = "http://toolscdn.yobot.win/calender/cn.json"
+        event_source = "https://mahomaho-insight.info/cached/gameevents.json"
         async with aiohttp.request("GET", url=event_source) as response:
             if response.status != 200:
                 raise ServerError(f"服务器状态错误：{response.status}")
             res = await response.text()
         events = json.loads(res)
         timeline = Event_timeline()
+        # for e in events:
+        #     timeline.add_event(
+        #         self.load_time_cn(e["start_time"]),
+        #         self.load_time_cn(e["end_time"]),
+        #         e["name"],
+        #     )
         for e in events:
             timeline.add_event(
-                self.load_time_cn(e["start_time"]),
-                self.load_time_cn(e["end_time"]),
-                e["name"],
+                self.load_time_cn((e['start'])),
+                self.load_time_cn(e['end']),
+                e['title']
             )
         return timeline
 
