@@ -12,7 +12,7 @@ from quart import (Quart, Response, jsonify, make_response, redirect, request,
 
 from .templating import render_template, template_folder
 from .web_util import rand_string
-from .ybdata import MAX_TRY_TIMES, User, User_login
+from .ybdata import MAX_TRY_TIMES, Clan_group, Clan_member, User, User_login
 
 EXPIRED_TIME = 7 * 24 * 60 * 60  # 7 days
 LOGIN_AUTH_COOKIE_NAME = 'yobot_login'
@@ -72,15 +72,13 @@ class Login:
             }
         reply = ''
         if match_num == 1:
-            reply = f'{self._get_login_code_url(ctx)}' \
-                '\n如显示已被使用，可发送 重置密码，之后用密码登录\n※ 请及时设置一个登录密码以避免无法获取登录链接时无法登录'
+            reply = self._get_login_code_url(ctx)
+            if self.setting['web_mode_hint']:
+                reply += '\n\n如果无法打开，请仔细阅读教程中《链接无法打开》的说明'
         elif match_num == 3:
-            reply = f'您的密码已重置为临时密码：{self._reset_pwd(ctx)}，登录后请立刻修改'
+            reply = f'您的临时密码是：{self._reset_pwd(ctx)}'
         else:
             assert False, f"没有实现匹配码{match_num}对应的操作"
-
-        if self.setting['web_mode_hint']:
-            reply += '\n\n如果无法打开，请仔细阅读教程中《链接无法打开》的说明'
 
         return {
             'reply': reply,
@@ -408,9 +406,23 @@ class Login:
         async def yobot_user():
             if 'yobot_user' not in session:
                 return redirect(url_for('yobot_login', callback=request.path))
+            clan_groups = Clan_member.select(
+                Clan_member.group_id,
+                Clan_group.group_name,
+            ).join(
+                Clan_group,
+                on=(Clan_member.group_id == Clan_group.group_id),
+                attr='info',
+            ).where(
+                Clan_member.qqid == session['yobot_user']
+            )
             return await render_template(
                 'user.html',
                 user=User.get_by_id(session['yobot_user']),
+                clan_groups=[{
+                    'group_id': g.group_id,
+                    'group_name': (getattr(getattr(g, 'info', None), 'group_name', None) or g.group_id)
+                } for g in clan_groups],
             )
 
         @app.route(

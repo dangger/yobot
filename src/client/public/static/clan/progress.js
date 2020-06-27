@@ -23,7 +23,7 @@ var vm = new Vue({
             axios.post('../api/', {
                 action: 'get_challenge',
                 csrf_token: csrf_token,
-                ts: null,
+                ts: (thisvue.get_today() / 1000) + 43200,
             }),
             axios.post('../api/', {
                 action: 'get_member_list',
@@ -44,12 +44,19 @@ var vm = new Vue({
                 m.detail = [];
             }
             thisvue.today = res.data.today;
+            thisvue.reportDate = thisvue.get_today();
             thisvue.refresh(res.data.challenges);
         })).catch(function (error) {
             thisvue.$alert(error, '获取数据失败');
         });
     },
     methods: {
+        get_today: function () {
+            let d = new Date();
+            d -= 18000000;
+            d = new Date(d).setHours(0, 0, 0, 0);
+            return d;
+        },
         csummary: function (cha) {
             if (cha == undefined) {
                 return '';
@@ -62,9 +69,9 @@ var vm = new Vue({
             }
             var nd = new Date();
             nd.setTime(cha.challenge_time * 1000);
-            var detailstr = nd.toLocaleString('chinese', { hour12: false }) + '\n';
+            var detailstr = nd.toLocaleString('chinese', { hour12: false, timeZone: 'asia/shanghai' }) + '\n';
             detailstr += cha.cycle + '周目' + cha.boss_num + '号boss\n';
-            detailstr += (cha.health_ramain + cha.damage).toLocaleString() + '→' + cha.health_ramain.toLocaleString();
+            detailstr += (cha.health_ramain + cha.damage).toLocaleString(options = { timeZone: 'asia/shanghai' }) + '→' + cha.health_ramain.toLocaleString(options = { timeZone: 'asia/shanghai' });
             if (cha.message) {
                 detailstr += '\n留言：' + cha.message;
             }
@@ -103,7 +110,9 @@ var vm = new Vue({
             this.today = -1;
         },
         refresh: function (challenges) {
+            challenges.sort((a, b) => a.qqid - b.qqid);
             this.progressData = [...this.members];
+            // for (m of this.progressData) m.today_total_damage = 0;
             var thisvue = this;
             var m = { qqid: -1 };
             for (c of challenges) {
@@ -113,9 +122,11 @@ var vm = new Vue({
                         qqid: c.qqid,
                         finished: 0,
                         detail: [],
+                        // today_total_damage: 0,
                     }
                 }
                 m.detail[2 * m.finished] = c;
+                // m.today_total_damage += c.damage;
                 if (c.is_continue) {
                     m.finished += 0.5;
                 } else {
@@ -175,7 +186,7 @@ var vm = new Vue({
             var uri = 'data:application/vnd.ms-excel;base64,';
             var ctx = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>' + document.getElementsByTagName('thead')[0].innerHTML + document.getElementsByTagName('tbody')[0].innerHTML + '</table></body></html>';
             window.location.href = uri + window.btoa(unescape(encodeURIComponent(ctx)));
-            document.documentElement.innerHTML = '请在Excel中查看（如果无法打开，请安装最新版本Excel）';
+            document.documentElement.innerHTML = "请在Excel中查看（如果无法打开，请安装最新版本Excel）\n或者将整个表格复制，粘贴到Excel中使用";
         },
         handleTitleSelect(key, keyPath) {
             switch (key) {

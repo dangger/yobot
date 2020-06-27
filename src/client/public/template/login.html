@@ -62,6 +62,9 @@
             </el-form-item>
         </el-form>
     </div>
+    <footer style="text-align: center">
+        powered by <a href="https://github.com/yuudi/yobot">yobot</a>
+    </footer>
 </div>
 
 <script>
@@ -92,7 +95,7 @@
                 const temp_form = document.createElement("form");
                 temp_form.action = url;
                 //如需打开新窗口，form的target属性要设置为'_blank'
-                temp_form.target = "_blank";
+                // temp_form.target = "_blank";
                 temp_form.method = "post";
                 temp_form.style.display = "none";
                 //添加参数

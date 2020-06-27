@@ -27,9 +27,15 @@ class Setting:
         async def yobot_setting():
             if 'yobot_user' not in session:
                 return redirect(url_for('yobot_login', callback=request.path))
+            user=User.get_by_id(session['yobot_user'])
+            if user.authority_group >= 10:
+                return await render_template(
+                    'unauthorized.html',
+                    limit='主人',
+                    uath=user.authority_group,
+                )
             return await render_template(
                 'admin/setting.html',
-                user=User.get_by_id(session['yobot_user']),
             )
 
         @app.route(
@@ -95,7 +101,7 @@ class Setting:
             if user.authority_group >= 10:
                 return await render_template(
                     'unauthorized.html',
-                    limit='机器人管理员',
+                    limit='主人',
                     uath=user.authority_group,
                 )
             return await render_template('admin/pool-setting.html')
@@ -156,7 +162,7 @@ class Setting:
             if user.authority_group >= 10:
                 return await render_template(
                     'unauthorized.html',
-                    limit='机器人管理员',
+                    limit='主人',
                     uath=user.authority_group,
                 )
             return await render_template('admin/users.html')
@@ -209,6 +215,15 @@ class Setting:
                     if ((m_user.authority_group <= user.authority_group) or
                             (data.get('authority_group', 999)) <= user.authority_group):
                         return jsonify(code=12, message='Exceed authorization is not allowed')
+                    if data.get('authority_group') == 1:
+                        self.setting['super-admin'].append(ctx['user_id'])
+                        save_setting = self.setting.copy()
+                        del save_setting['dirname']
+                        del save_setting['verinfo']
+                        config_path = os.path.join(
+                            self.setting['dirname'], 'yobot_config.json')
+                        with open(config_path, 'w', encoding='utf-8') as f:
+                            json.dump(save_setting, f, indent=4)
                     if m_user is None:
                         return jsonify(code=21, message='user not exist')
                     for key in data.keys():
@@ -240,7 +255,7 @@ class Setting:
             if user.authority_group >= 10:
                 return await render_template(
                     'unauthorized.html',
-                    limit='机器人管理员',
+                    limit='主人',
                     uath=user.authority_group,
                 )
             return await render_template('admin/groups.html')
@@ -275,13 +290,25 @@ class Setting:
                 action = req['action']
                 if action == 'get_data':
                     groups = []
-                    for group in Clan_group.select():
+                    for group in Clan_group.select().where(
+                        Clan_group.deleted == False,
+                    ):
                         groups.append({
                             'group_id': group.group_id,
                             'group_name': group.group_name,
                             'game_server': group.game_server,
                         })
                     return jsonify(code=0, data=groups)
+                if action == 'drop_group':
+                    User.update({
+                        User.clan_group_id: None,
+                    }).where(
+                        User.clan_group_id == req['group_id'],
+                    ).execute()
+                    Clan_group.delete().where(
+                        Clan_group.group_id == req['group_id'],
+                    ).execute()
+                    return jsonify(code=0, message='ok')
                 else:
                     return jsonify(code=32, message='unknown action')
             except KeyError as e:

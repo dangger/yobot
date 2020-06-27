@@ -32,8 +32,8 @@
                 </span>
                 <p v-for="m in subscribers[bn-1]">
                     [[ find_name(m.qqid) ]]（[[ m.qqid ]]）
-                    <template v-if="m.comment.message">
-                        ：[[ m.comment.message ]]
+                    <template v-if="m.message">
+                        ：[[ m.message ]]
                     </template>
                 </p>
                 <p v-if="subscribers[bn-1].length == 0">
@@ -42,6 +42,9 @@
             </el-tab-pane>
         </el-tabs>
     </div>
+    <footer style="text-align: center">
+        powered by <a href="https://github.com/yuudi/yobot">yobot</a>
+    </footer>
 </body>
 <script>var csrf_token = "{{ session['csrf_token'] }}";</script>
 <script src="{{ url_for('yobot_static', filename='clan/subscribers.js') }}"></script>
