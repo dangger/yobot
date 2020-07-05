@@ -46,7 +46,7 @@ class News:
             },
             "news_cn_bilibili": {
                 "name": "国服B站动态",
-                "source": "http://rsshub.app.cdn.cloudflare.net/bilibili/user/dynamic/353840826",
+                "source": "http://192.168.123.203:1200/bilibili/user/dynamic/353840826",
                 "headers": {"host": "rsshub.app"},
                 "pattern": "{title}\n{link}",
             }

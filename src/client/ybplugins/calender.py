@@ -14,7 +14,18 @@ _calender_url = {
     "tw": "https://pcredivewiki.tw/",
     "cn": "https://tools.yobot.win/calender/#cn",
 }
-
+headers = {
+    'Connection': 'keep-alive',
+    'Cache-Control': 'max-age=0',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+    'DNT': '1',
+    'Upgrade-Insecure-Requests': '1',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36',
+    'Sec-Fetch-Site': 'same-origin',
+    'Sec-Fetch-Mode': 'same-origin',
+    'Sec-Fetch-Dest': 'empty',
+    'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,ja;q=0.7,zh-TW;q=0.6'
+}
 
 class Event_timeline:
     def __init__(self):
@@ -168,7 +179,7 @@ class Event:
     async def load_timeline_cn_async(self):
         #event_source = "http://toolscdn.yobot.win/calender/cn.json"
         event_source = "https://mahomaho-insight.info/cached/gameevents.json"
-        async with aiohttp.request("GET", url=event_source) as response:
+        async with aiohttp.request("GET", headers=headers, url=event_source) as response:
             if response.status != 200:
                 raise ServerError(f"服务器状态错误：{response.status}")
             res = await response.text()
@@ -180,7 +191,7 @@ class Event:
         #         self.load_time_cn(e["end_time"]),
         #         e["name"],
         #     )
-        for e in events:
+        for e in events['cn']:
             timeline.add_event(
                 self.load_time_cn((e['start'])),
                 self.load_time_cn(e['end']),
