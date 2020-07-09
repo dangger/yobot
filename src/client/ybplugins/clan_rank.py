@@ -20,18 +20,30 @@ import requests
 from aiocqhttp.api import Api
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from quart import Quart
+from apscheduler.triggers.cron import CronTrigger
+from apscheduler.triggers.date import DateTrigger
+import datetime
 
+headers = {
+    'Connection': 'keep-alive',
+    'Accept': 'application/json, text/javascript, */*; q=0.01',
+    'DNT': '1',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36',
+    'Content-Type': 'application/json',
+    'Origin': 'https://kengxxiao.github.io',
+    'Sec-Fetch-Site': 'cross-site',
+    'Sec-Fetch-Mode': 'cors',
+    'Sec-Fetch-Dest': 'empty',
+    'Referer': 'https://kengxxiao.github.io/Kyouka/',
+    'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,ja;q=0.7,zh-TW;q=0.6',
+}
 
+data = '{"history":0,"clanName":"\u58A8\u6C60\u82D1"}'
 class clan_rank:
     Passive = False
     Active = True
     Request = False
-    def __init__(self,
-                 glo_setting: Dict[str, Any],
-                 scheduler: AsyncIOScheduler,
-                 app: Quart,
-                 bot_api: Api,
-                 *args, **kwargs):
+    def __init__(self, glo_setting: dict, *args, **kwargs):
         '''
         初始化，只在启动时执行一次
 
@@ -52,40 +64,36 @@ class clan_rank:
         self.setting = glo_setting
 
         # 这是cqhttp的api，详见cqhttp文档
-        self.api = bot_api
+        #self.api = bot_api
 
         # # 注册定时任务，详见apscheduler文档
-        @scheduler.scheduled_job('cron', hour='8-23', minute="46")
-        async def send_clan_rank():
+        # @scheduler.scheduled_job('cron', hour='8-23', minute="*")
+        async def get_clan_rank():
             print("开始查询公会战排名...")
-            headers = {
-                'Connection': 'keep-alive',
-                'Accept': 'application/json, text/javascript, */*; q=0.01',
-                'DNT': '1',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36',
-                'Content-Type': 'application/json',
-                'Origin': 'https://kengxxiao.github.io',
-                'Sec-Fetch-Site': 'cross-site',
-                'Sec-Fetch-Mode': 'cors',
-                'Sec-Fetch-Dest': 'empty',
-                'Referer': 'https://kengxxiao.github.io/Kyouka/',
-                'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,ja;q=0.7,zh-TW;q=0.6',
-            }
-            data = '{"clanName":"墨池苑"}'
-            response = requests.post('https://service-kjcbcnmw-1254119946.gz.apigw.tencentcs.com/name/0', headers=headers, data=data.encode('utf-8'))
+            response = await requests.post('https://service-kjcbcnmw-1254119946.gz.apigw.tencentcs.com/name/0', headers=headers, data=data.encode('utf-8'))
             sub_groups = self.setting.get("notify_groups", [])
             if response.json()["code"] == 0:
                 send_message = "当前公会战排名为:第"+str(response.json()['data'][0]['rank'])+"名"
+                print(send_message)
                 for group in sub_groups:
-                    await self.api.send_group_msg(group_id=group, message=send_message)
+                    self.api.send_group_msg(group_id=group, message=send_message)
             else:
                 print("请求公会战排名失败！")
+                print(response.text())
 
         # # 注册web路由，详见flask与quart文档
         # @app.route('/is-bot-running', methods=['GET'])
         # async def check_bot():
         #     return 'yes, bot is running'
-
+    def jobs(self):
+        trigger = CronTrigger(hour="5-23", minute="*")
+        job = (trigger, self.get_clan_rank)
+        init_trigger = DateTrigger(
+            datetime.datetime.now() +
+            datetime.timedelta(seconds=5)
+        )  # 启动5秒后初始化
+        init_job = (init_trigger, self.send_clan_rank)
+        return (job, init_job)
     async def execute_async(self, ctx: Dict[str, Any]) -> Union[None, bool, str]:
         '''
         每次bot接收有效消息时触发
